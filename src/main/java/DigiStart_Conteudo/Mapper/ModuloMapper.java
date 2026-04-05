@@ -9,6 +9,7 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface ModuloMapper {
 
+    @Mapping(target = "aulas", ignore = true)
     ModuloResponseDTO toResponseDTO(Modulo modulo);
 
     @Mapping(target = "id", ignore = true)

@@ -61,14 +61,14 @@ public class AulaService {
 
                     if (aulaAtualizada.getTitulo() != null) {
                         if (aulaAtualizada.getTitulo().length() < 10 || aulaAtualizada.getTitulo().length() > 50) {
-                            throw new ValidacaoException("Novo título da aula deve ter entre 10 e 50 caracteres."); // RF006
+                            throw new ValidacaoException("Novo título da aula deve ter entre 10 e 50 caracteres.");
                         }
                         aulaExistente.setTitulo(aulaAtualizada.getTitulo());
                     }
 
                     if (aulaAtualizada.getDescricao() != null) {
                         if (aulaAtualizada.getDescricao().length() < 10 || aulaAtualizada.getDescricao().length() > 255) {
-                            throw new ValidacaoException("A descrição deve ter entre 10 e 255 caracteres."); // RF006
+                            throw new ValidacaoException("A descrição deve ter entre 10 e 255 caracteres.");
                         }
                         aulaExistente.setDescricao(aulaAtualizada.getDescricao());
                     }

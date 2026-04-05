@@ -38,4 +38,22 @@ public class ModuloRestController {
         var modulo = moduloService.salvar(input, professorId);
         return ResponseEntity.status(HttpStatus.CREATED).body(moduloMapper.toResponseDTO(modulo));
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ModuloResponseDTO> atualizar(@PathVariable Long id, @RequestBody @Valid ModuloRequestDTO input) {
+        var modulo = moduloService.atualizar(id, input);
+        return ResponseEntity.ok(moduloMapper.toResponseDTO(modulo));
+    }
+
+    @GetMapping("/professor/{professorId}")
+    public List<ModuloResponseDTO> listarPorProfessor(@PathVariable Long professorId) {
+        return moduloService.listarPorProfessor(professorId).stream()
+                .map(moduloMapper::toResponseDTO).toList();
+    }
+
+    @PatchMapping("/{id}/desativar")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void desativar(@PathVariable Long id, @RequestParam Long professorId) {
+        moduloService.desativarModuloSeDono(id, professorId);
+    }
 }

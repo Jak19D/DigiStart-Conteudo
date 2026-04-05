@@ -1,7 +1,9 @@
 package DigiStart_Conteudo.Controller;
 
+import DigiStart_Conteudo.DTO.Input.AulaRequestDTO;
 import DigiStart_Conteudo.DTO.Output.AulaResponseDTO;
 import DigiStart_Conteudo.Mapper.AulaMapper;
+import DigiStart_Conteudo.Model.Aula;
 import DigiStart_Conteudo.Service.AulaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -28,6 +30,41 @@ public class AulaRestController {
                 .toList();
 
         return ResponseEntity.ok(aulas);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<AulaResponseDTO>> listar() {
+        var aulas = aulaService.listar()
+                .stream()
+                .map(aulaMapper::toResponseDTO)
+                .toList();
+
+        return ResponseEntity.ok(aulas);
+    }
+
+    @PostMapping
+    public ResponseEntity<AulaResponseDTO> adicionar(@RequestBody AulaRequestDTO aulaRequestDTO) {
+        Aula novaAula = aulaMapper.toEntity(aulaRequestDTO);
+        Aula aulaSalva = aulaService.adicionarAula(novaAula);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(aulaMapper.toResponseDTO(aulaSalva));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<AulaResponseDTO> atualizar(
+            @PathVariable Long id,
+            @RequestBody AulaRequestDTO aulaRequestDTO,
+            @RequestParam Long professorId) {
+        
+        Aula aulaAtualizada = aulaMapper.toEntity(aulaRequestDTO);
+        Aula aulaSalva = aulaService.atualizar(id, aulaAtualizada, professorId);
+        return ResponseEntity.ok(aulaMapper.toResponseDTO(aulaSalva));
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deletar(@PathVariable Long id, @RequestParam Long professorId) {
+        aulaService.deletar(id, professorId);
     }
 
     @GetMapping("/{id}")

@@ -5,6 +5,7 @@ import DigiStart_Conteudo.Exceptions.RegraNegocioException;
 import DigiStart_Conteudo.Exceptions.ValidacaoException;
 import DigiStart_Conteudo.Model.Aula;
 import DigiStart_Conteudo.Model.Exercicio;
+import DigiStart_Conteudo.Repository.AulaRepository;
 import DigiStart_Conteudo.Repository.ExercicioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,14 +18,25 @@ import java.util.ArrayList;
 public class ExercicioService {
 
     private final ExercicioRepository exercicioRepository;
+    private final AulaRepository aulaRepository;
 
     @Autowired
-    public ExercicioService(ExercicioRepository exercicioRepository) {
+    public ExercicioService(ExercicioRepository exercicioRepository, AulaRepository aulaRepository) {
         this.exercicioRepository = exercicioRepository;
+        this.aulaRepository = aulaRepository;
     }
 
     public Exercicio salvar(Exercicio exercicio) {
         return exercicioRepository.save(exercicio);
+    }
+
+    public List<Exercicio> listarTodos() {
+        return exercicioRepository.findAll();
+    }
+
+    public Exercicio buscarPorId(Long id) {
+        return exercicioRepository.findById(id)
+                .orElseThrow(() -> new RecurosNaoEncontrado("Exercício não encontrado"));
     }
 
     public List<Exercicio> listarPorAula(Long aulaId) {
@@ -32,7 +44,14 @@ public class ExercicioService {
     }
 
     @Transactional
-    public Exercicio criarNovoExercicio(Aula aula, String titulo, String descricao) {
+    public Exercicio criarNovoExercicio(Long aulaId, String titulo, String descricao, Long professorId) {
+        Aula aula = aulaRepository.findById(aulaId)
+                .orElseThrow(() -> new RecurosNaoEncontrado("Aula não encontrada"));
+
+        if (!aula.getModulo().getProfessorId().equals(professorId)) {
+            throw new RegraNegocioException("Você não tem permissão para criar exercícios nesta aula.");
+        }
+
         if (titulo == null || titulo.isEmpty() || descricao == null || descricao.isEmpty()) {
             throw new ValidacaoException("Título e descrição do exercício são obrigatórios.");
         }

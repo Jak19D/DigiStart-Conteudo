@@ -60,10 +60,6 @@ public class ModuloService {
         return moduloRepository.findByProfessorId(professorId);
     }
 
-    public List<Modulo> listarAtivosPorProfessor(Long professorId) {
-        return moduloRepository.findByProfessorIdAndAtivoTrue(professorId);
-    }
-
     public Modulo buscarPorId(Long id) {
         return moduloRepository.findById(id)
                 .orElseThrow(() -> new RecurosNaoEncontrado("Módulo não encontrado com ID: " + id));
