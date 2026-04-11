@@ -5,6 +5,8 @@ import DigiStart_Conteudo.Exceptions.ValidacaoException;
 import DigiStart_Conteudo.Model.Modulo;
 import DigiStart_Conteudo.Repository.ModuloRepository;
 import DigiStart_Conteudo.DTO.Input.ModuloRequestDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,11 +15,17 @@ import java.util.List;
 @Service
 public class ModuloService {
 
+    private static final Logger log = LoggerFactory.getLogger(ModuloService.class);
+    
     private final ModuloRepository moduloRepository;
 
     @Autowired
-    public ModuloService(ModuloRepository moduloRepository) {
+    private RabbitMQService rabbitMQService;
+
+    @Autowired
+    public ModuloService(ModuloRepository moduloRepository, RabbitMQService rabbitMQService) {
         this.moduloRepository = moduloRepository;
+        this.rabbitMQService = rabbitMQService;
     }
 
     private void validarNomeModulo(String nome) {
@@ -38,10 +46,21 @@ public class ModuloService {
         }
     }
 
+    private void validarProfessorId(Long professorId) {
+        if (professorId == null) {
+            throw new ValidacaoException("O ID do professor é obrigatório");
+        }
+        
+        rabbitMQService.sendProfessorValidation(professorId);
+        
+        log.info("Requisição de validação de professor enviada: professorId={}", professorId);
+    }
+
     @Transactional
     public Modulo salvar(ModuloRequestDTO input, Long professorId) {
         validarNomeModulo(input.getNome());
         validarDescricao(input.getDescricao());
+        validarProfessorId(professorId);
 
         Modulo novoModulo = new Modulo();
         novoModulo.setNome(input.getNome());
@@ -49,7 +68,11 @@ public class ModuloService {
         novoModulo.setProfessorId(professorId);
         novoModulo.setAtivo(true);
 
-        return moduloRepository.save(novoModulo);
+        Modulo moduloSalvo = moduloRepository.save(novoModulo);
+        
+        rabbitMQService.sendContentEvent(professorId, "CREATED", "MODULO", moduloSalvo.getId());
+        
+        return moduloSalvo;
     }
 
     public List<Modulo> listarTodosAtivos() {
@@ -83,7 +106,7 @@ public class ModuloService {
     }
 
     @Transactional
-    public Boolean desativarModuloSeDono(Long moduloId, Long professorId) {
+    public Boolean desativarModulo(Long moduloId, Long professorId, boolean isBatchOperation) {
         Modulo modulo = moduloRepository.findById(moduloId)
                 .orElseThrow(() -> new RecurosNaoEncontrado("Módulo não encontrado"));
 
@@ -93,6 +116,28 @@ public class ModuloService {
 
         modulo.setAtivo(false);
         moduloRepository.save(modulo);
+        
+        rabbitMQService.sendContentEvent(professorId, "DEACTIVATED", "MODULO", moduloId);
+        
+        if (!isBatchOperation) {
+            log.info("Módulo {} desativado com sucesso", moduloId);
+        }
+        
         return true;
+    }
+
+    @Transactional
+    public void desativarModulosPorProfessor(Long professorId) {
+        List<Modulo> modulos = moduloRepository.findByProfessorId(professorId);
+        int desativados = 0;
+        
+        for (Modulo modulo : modulos) {
+            if (modulo.getAtivo()) {
+                desativarModulo(modulo.getId(), professorId, true);
+                desativados++;
+            }
+        }
+        
+        log.info("Desativados {} módulos do professor {}", desativados, professorId);
     }
 }

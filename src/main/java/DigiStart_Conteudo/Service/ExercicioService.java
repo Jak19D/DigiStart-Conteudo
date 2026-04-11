@@ -7,6 +7,8 @@ import DigiStart_Conteudo.Model.Aula;
 import DigiStart_Conteudo.Model.Exercicio;
 import DigiStart_Conteudo.Repository.AulaRepository;
 import DigiStart_Conteudo.Repository.ExercicioRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,18 +19,21 @@ import java.util.ArrayList;
 @Service
 public class ExercicioService {
 
+    private static final Logger log = LoggerFactory.getLogger(ExercicioService.class);
+    
     private final ExercicioRepository exercicioRepository;
     private final AulaRepository aulaRepository;
 
     @Autowired
-    public ExercicioService(ExercicioRepository exercicioRepository, AulaRepository aulaRepository) {
+    private RabbitMQService rabbitMQService;
+
+    @Autowired
+    public ExercicioService(ExercicioRepository exercicioRepository, AulaRepository aulaRepository, RabbitMQService rabbitMQService) {
         this.exercicioRepository = exercicioRepository;
         this.aulaRepository = aulaRepository;
+        this.rabbitMQService = rabbitMQService;
     }
 
-    public Exercicio salvar(Exercicio exercicio) {
-        return exercicioRepository.save(exercicio);
-    }
 
     public List<Exercicio> listarTodos() {
         return exercicioRepository.findAll();
@@ -57,7 +62,11 @@ public class ExercicioService {
         }
 
         Exercicio novoExercicio = new Exercicio(titulo, descricao, aula);
-        return exercicioRepository.save(novoExercicio);
+        Exercicio exercicioSalvo = exercicioRepository.save(novoExercicio);
+        
+        rabbitMQService.sendContentEvent(professorId, "CREATED", "EXERCICIO", exercicioSalvo.getId());
+        
+        return exercicioSalvo;
     }
 
     @Transactional
@@ -81,6 +90,11 @@ public class ExercicioService {
 
     @Transactional
     public void deletar(Long exercicioId, Long professorId) {
+        deletarExercicio(exercicioId, professorId, false);
+    }
+
+    @Transactional
+    public void deletarExercicio(Long exercicioId, Long professorId, boolean isBatchOperation) {
         Exercicio exercicio = exercicioRepository.findById(exercicioId)
                 .orElseThrow(() -> new RecurosNaoEncontrado("Exercício não encontrado."));
 
@@ -89,6 +103,24 @@ public class ExercicioService {
         }
 
         exercicioRepository.delete(exercicio);
+        rabbitMQService.sendContentEvent(professorId, "DELETED", "EXERCICIO", exercicioId);
+        
+        if (!isBatchOperation) {
+            log.info("Exercício {} deletado com sucesso", exercicioId);
+        }
+    }
+
+    @Transactional
+    public void desativarExerciciosPorProfessor(Long professorId) {
+        List<Exercicio> exercicios = exercicioRepository.findAllByAulaModuloProfessorId(professorId);
+        int removidos = 0;
+        
+        for (Exercicio exercicio : exercicios) {
+            deletarExercicio(exercicio.getId(), professorId, true);
+            removidos++;
+        }
+        
+        log.info("Removidos {} exercícios do professor {}", removidos, professorId);
     }
 
 }

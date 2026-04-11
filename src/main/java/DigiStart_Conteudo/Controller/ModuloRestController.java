@@ -54,6 +54,6 @@ public class ModuloRestController {
     @PatchMapping("/{id}/desativar")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void desativar(@PathVariable Long id, @RequestParam Long professorId) {
-        moduloService.desativarModuloSeDono(id, professorId);
+        moduloService.desativarModulo(id, professorId, false);
     }
 }

@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface ExercicioRepository extends JpaRepository<Exercicio, Long> {
     List<Exercicio> findByAulaId(Long aulaId);
+    
+    List<Exercicio> findAllByAulaModuloProfessorId(Long professorId);
 }

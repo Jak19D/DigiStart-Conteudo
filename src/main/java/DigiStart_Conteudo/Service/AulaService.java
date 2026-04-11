@@ -6,6 +6,8 @@ import DigiStart_Conteudo.Exceptions.ValidacaoException;
 import DigiStart_Conteudo.Model.Aula;
 import DigiStart_Conteudo.Model.Exercicio;
 import DigiStart_Conteudo.Repository.AulaRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,15 +17,21 @@ import java.util.List;
 @Service
 public class AulaService {
 
+    private static final Logger log = LoggerFactory.getLogger(AulaService.class);
+    
     private final AulaRepository aulaRepository;
     private final ProgressoAulaService progressoAulaService;
     private final ExercicioService exercicioService;
 
     @Autowired
-    public AulaService(AulaRepository aulaRepository, ProgressoAulaService progressoAulaService, ExercicioService exercicioService) {
+    private RabbitMQService rabbitMQService;
+
+    @Autowired
+    public AulaService(AulaRepository aulaRepository, ProgressoAulaService progressoAulaService, ExercicioService exercicioService, RabbitMQService rabbitMQService) {
         this.aulaRepository = aulaRepository;
         this.progressoAulaService = progressoAulaService;
         this.exercicioService = exercicioService;
+        this.rabbitMQService = rabbitMQService;
     }
 
 
@@ -85,21 +93,26 @@ public class AulaService {
 
     @Transactional
     public void deletar(Long id, Long professorId) {
-        Aula aula = buscarPorId(id);
+        desativarAula(id, professorId, false);
+    }
+
+    @Transactional
+    public Boolean desativarAula(Long aulaId, Long professorId, boolean isBatchOperation) {
+        Aula aula = buscarPorId(aulaId);
 
         if (!aula.getModulo().getProfessorId().equals(professorId)) {
-            throw new RegraNegocioException("Você não tem permissão para deletar esta aula.");
+            throw new RegraNegocioException("Você não tem permissão para desativar esta aula.");
         }
 
         aula.setAtiva(false);
         aulaRepository.save(aula);
-    }
-
-    @Transactional
-    public Boolean desativarAula(Long id) {
-        Aula aula = buscarPorId(id);
-        aula.setAtiva(false);
-        aulaRepository.save(aula);
+        
+        rabbitMQService.sendContentEvent(professorId, "DEACTIVATED", "AULA", aulaId);
+        
+        if (!isBatchOperation) {
+            log.info("Aula {} desativada com sucesso", aulaId);
+        }
+        
         return true;
     }
 
@@ -134,7 +147,6 @@ public class AulaService {
     }
 
 
-
     public List<Aula> listar() {
         return aulaRepository.findAll();
     }
@@ -147,5 +159,20 @@ public class AulaService {
     public Aula buscarPorId(Long id) {
         return aulaRepository.findById(id)
                 .orElseThrow(() -> new RecurosNaoEncontrado("Aula não encontrada com o id: " + id));
+    }
+
+    @Transactional
+    public void desativarAulasPorProfessor(Long professorId) {
+        List<Aula> aulas = aulaRepository.findAllByModuloProfessorId(professorId);
+        int desativadas = 0;
+        
+        for (Aula aula : aulas) {
+            if (aula.isAtiva()) {
+                desativarAula(aula.getId(), professorId, true);
+                desativadas++;
+            }
+        }
+        
+        log.info("Desativadas {} aulas do professor {}", desativadas, professorId);
     }
 }

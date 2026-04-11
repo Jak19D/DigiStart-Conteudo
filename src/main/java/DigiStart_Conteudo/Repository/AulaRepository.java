@@ -15,4 +15,6 @@ public interface AulaRepository extends JpaRepository<Aula, Long> {
     Optional<Aula> findByModuloAndOrdem(Modulo modulo, int ordem);
 
     int countByModulo(Modulo modulo);
+    
+    List<Aula> findAllByModuloProfessorId(Long professorId);
 }
