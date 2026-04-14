@@ -23,15 +23,14 @@ public class AulaService {
     private final ProgressoAulaService progressoAulaService;
     private final ExercicioService exercicioService;
 
-    @Autowired
+    @Autowired(required = false)
     private RabbitMQService rabbitMQService;
 
     @Autowired
-    public AulaService(AulaRepository aulaRepository, ProgressoAulaService progressoAulaService, ExercicioService exercicioService, RabbitMQService rabbitMQService) {
+    public AulaService(AulaRepository aulaRepository, ProgressoAulaService progressoAulaService, ExercicioService exercicioService) {
         this.aulaRepository = aulaRepository;
         this.progressoAulaService = progressoAulaService;
         this.exercicioService = exercicioService;
-        this.rabbitMQService = rabbitMQService;
     }
 
 
@@ -107,7 +106,9 @@ public class AulaService {
         aula.setAtiva(false);
         aulaRepository.save(aula);
         
-        rabbitMQService.sendContentEvent(professorId, "DEACTIVATED", "AULA", aulaId);
+        if (rabbitMQService != null) {
+            rabbitMQService.sendContentEvent(professorId, "DEACTIVATED", "AULA", aulaId);
+        }
         
         if (!isBatchOperation) {
             log.info("Aula {} desativada com sucesso", aulaId);

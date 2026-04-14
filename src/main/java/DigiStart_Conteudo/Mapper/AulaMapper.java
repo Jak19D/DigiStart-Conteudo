@@ -11,6 +11,7 @@ public interface AulaMapper {
 
     @Mapping(source = "modulo.id", target = "moduloId")
     @Mapping(source = "modulo.nome", target = "nomeModulo")
+    @Mapping(source = "ativa", target = "ativa")
     AulaResponseDTO toResponseDTO(Aula aula);
 
     @Mapping(target = "id", ignore = true)

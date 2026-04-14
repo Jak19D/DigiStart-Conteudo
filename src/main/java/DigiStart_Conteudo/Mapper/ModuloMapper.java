@@ -13,6 +13,7 @@ public interface ModuloMapper {
     ModuloResponseDTO toResponseDTO(Modulo modulo);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "ativo", ignore = true)
     @Mapping(target = "professorId", ignore = true)
     Modulo toEntity(ModuloRequestDTO dto);
 }

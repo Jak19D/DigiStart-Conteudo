@@ -19,13 +19,12 @@ public class ModuloService {
     
     private final ModuloRepository moduloRepository;
 
-    @Autowired
+    @Autowired(required = false)
     private RabbitMQService rabbitMQService;
 
     @Autowired
-    public ModuloService(ModuloRepository moduloRepository, RabbitMQService rabbitMQService) {
+    public ModuloService(ModuloRepository moduloRepository) {
         this.moduloRepository = moduloRepository;
-        this.rabbitMQService = rabbitMQService;
     }
 
     private void validarNomeModulo(String nome) {
@@ -51,7 +50,9 @@ public class ModuloService {
             throw new ValidacaoException("O ID do professor é obrigatório");
         }
         
-        rabbitMQService.sendProfessorValidation(professorId);
+        if (rabbitMQService != null) {
+            rabbitMQService.sendProfessorValidation(professorId);
+        }
         
         log.info("Requisição de validação de professor enviada: professorId={}", professorId);
     }
@@ -70,7 +71,9 @@ public class ModuloService {
 
         Modulo moduloSalvo = moduloRepository.save(novoModulo);
         
-        rabbitMQService.sendContentEvent(professorId, "CREATED", "MODULO", moduloSalvo.getId());
+        if (rabbitMQService != null) {
+            rabbitMQService.sendContentEvent(professorId, "CREATED", "MODULO", moduloSalvo.getId());
+        }
         
         return moduloSalvo;
     }
@@ -117,7 +120,9 @@ public class ModuloService {
         modulo.setAtivo(false);
         moduloRepository.save(modulo);
         
-        rabbitMQService.sendContentEvent(professorId, "DEACTIVATED", "MODULO", moduloId);
+        if (rabbitMQService != null) {
+            rabbitMQService.sendContentEvent(professorId, "DEACTIVATED", "MODULO", moduloId);
+        }
         
         if (!isBatchOperation) {
             log.info("Módulo {} desativado com sucesso", moduloId);

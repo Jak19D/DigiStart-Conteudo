@@ -5,13 +5,14 @@ import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFacto
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@ConditionalOnProperty(name = "spring.rabbitmq.host", matchIfMissing = false)
 public class RabbitMQConfig {
 
-    // Constantes para as filas e exchanges - compatíveis com o microserviço de usuários
     public static final String USER_QUEUE = "user.queue";
     public static final String USER_EXCHANGE = "user.exchange";
     public static final String USER_ROUTING_KEY = "user.created";
@@ -24,12 +25,10 @@ public class RabbitMQConfig {
     public static final String CONTENT_EXCHANGE = "content.exchange";
     public static final String CONTENT_ROUTING_KEY = "content.created";
 
-    // Fila específica para este microserviço receber mensagens
     public static final String CONTEUDO_QUEUE = "conteudo.queue";
     public static final String CONTEUDO_EXCHANGE = "conteudo.exchange";
     public static final String CONTEUDO_ROUTING_KEY = "conteudo.sync";
 
-    // Configurações para comunicação com microserviço de usuários
     @Bean
     public Queue userQueue() {
         return QueueBuilder.durable(USER_QUEUE).build();
@@ -48,7 +47,6 @@ public class RabbitMQConfig {
                 .with(USER_ROUTING_KEY);
     }
 
-    // Configurações para notificações
     @Bean
     public Queue notificationQueue() {
         return QueueBuilder.durable(NOTIFICATION_QUEUE).build();
@@ -67,7 +65,6 @@ public class RabbitMQConfig {
                 .with(NOTIFICATION_ROUTING_KEY);
     }
 
-    // Configurações para conteúdo
     @Bean
     public Queue contentQueue() {
         return QueueBuilder.durable(CONTENT_QUEUE).build();
@@ -86,7 +83,6 @@ public class RabbitMQConfig {
                 .with(CONTENT_ROUTING_KEY);
     }
 
-    // Configurações específicas do microserviço de conteúdo
     @Bean
     public Queue conteudoQueue() {
         return QueueBuilder.durable(CONTEUDO_QUEUE).build();
@@ -105,7 +101,6 @@ public class RabbitMQConfig {
                 .with(CONTEUDO_ROUTING_KEY);
     }
 
-    // Configurações do RabbitTemplate para envio de mensagens
     @Bean
     public Jackson2JsonMessageConverter messageConverter() {
         return new Jackson2JsonMessageConverter();

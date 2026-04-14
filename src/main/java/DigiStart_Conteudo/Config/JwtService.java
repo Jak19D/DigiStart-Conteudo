@@ -115,7 +115,6 @@ public class JwtService extends OncePerRequestFilter {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    // Implementação do filtro
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
