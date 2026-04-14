@@ -12,7 +12,6 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -43,21 +42,17 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authz -> authz
-                // Endpoints públicos
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 
-                // Endpoints que requerem autenticação
                 .requestMatchers("/api/modulos/**").authenticated()
                 .requestMatchers("/api/aulas/**").authenticated()
                 .requestMatchers("/api/exercicios/**").authenticated()
                 
-                // Endpoints de admin
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 
-                // Qualquer outra requisição precisa estar autenticada
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtService, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);

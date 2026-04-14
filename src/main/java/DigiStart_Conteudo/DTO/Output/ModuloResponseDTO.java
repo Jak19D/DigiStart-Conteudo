@@ -13,5 +13,7 @@ public class ModuloResponseDTO {
     private Long id;
     private String nome;
     private String descricao;
+    private Boolean ativo;
+    private Long professorId;
     private List<AulaResponseDTO> aulas;
 }

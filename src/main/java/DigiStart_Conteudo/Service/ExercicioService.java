@@ -24,14 +24,13 @@ public class ExercicioService {
     private final ExercicioRepository exercicioRepository;
     private final AulaRepository aulaRepository;
 
-    @Autowired
+    @Autowired(required = false)
     private RabbitMQService rabbitMQService;
 
     @Autowired
-    public ExercicioService(ExercicioRepository exercicioRepository, AulaRepository aulaRepository, RabbitMQService rabbitMQService) {
+    public ExercicioService(ExercicioRepository exercicioRepository, AulaRepository aulaRepository) {
         this.exercicioRepository = exercicioRepository;
         this.aulaRepository = aulaRepository;
-        this.rabbitMQService = rabbitMQService;
     }
 
 
@@ -64,7 +63,9 @@ public class ExercicioService {
         Exercicio novoExercicio = new Exercicio(titulo, descricao, aula);
         Exercicio exercicioSalvo = exercicioRepository.save(novoExercicio);
         
-        rabbitMQService.sendContentEvent(professorId, "CREATED", "EXERCICIO", exercicioSalvo.getId());
+        if (rabbitMQService != null) {
+            rabbitMQService.sendContentEvent(professorId, "CREATED", "EXERCICIO", exercicioSalvo.getId());
+        }
         
         return exercicioSalvo;
     }
@@ -103,7 +104,9 @@ public class ExercicioService {
         }
 
         exercicioRepository.delete(exercicio);
-        rabbitMQService.sendContentEvent(professorId, "DELETED", "EXERCICIO", exercicioId);
+        if (rabbitMQService != null) {
+            rabbitMQService.sendContentEvent(professorId, "DELETED", "EXERCICIO", exercicioId);
+        }
         
         if (!isBatchOperation) {
             log.info("Exercício {} deletado com sucesso", exercicioId);
