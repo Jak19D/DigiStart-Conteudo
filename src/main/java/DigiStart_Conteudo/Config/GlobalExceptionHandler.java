@@ -3,6 +3,7 @@ package DigiStart_Conteudo.Config;
 import DigiStart_Conteudo.Exceptions.RecurosNaoEncontrado;
 import DigiStart_Conteudo.Exceptions.ValidacaoException;
 import DigiStart_Conteudo.Exceptions.RegraNegocioException;
+import DigiStart_Conteudo.Exceptions.RateLimitExceededException;
 import DigiStart_Conteudo.DTO.Output.ErrorResponseDTO;
 import io.jsonwebtoken.JwtException;
 import org.slf4j.Logger;
@@ -113,6 +114,18 @@ public class GlobalExceptionHandler {
             LocalDateTime.now()
         );
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    }
+
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ErrorResponseDTO> handleRateLimitExceeded(RateLimitExceededException ex) {
+        log.warn("Rate limit excedido: {}", ex.getMessage());
+        ErrorResponseDTO error = new ErrorResponseDTO(
+            HttpStatus.TOO_MANY_REQUESTS.value(),
+            "Limite de requisições excedido",
+            ex.getMessage(),
+            LocalDateTime.now()
+        );
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(error);
     }
 
     @ExceptionHandler(JwtException.class)
