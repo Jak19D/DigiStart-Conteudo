@@ -23,7 +23,7 @@ public class RabbitMQConfig {
 
     public static final String CONTENT_QUEUE = "content.queue";
     public static final String CONTENT_EXCHANGE = "content.exchange";
-    public static final String CONTENT_ROUTING_KEY = "content.created";
+    public static final String CONTENT_ROUTING_KEY = "module.*";
 
     public static final String CONTEUDO_QUEUE = "conteudo.queue";
     public static final String CONTEUDO_EXCHANGE = "conteudo.exchange";
